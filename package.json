@@ -7,9 +7,14 @@
     "vscode": "^1.97.0"
   },
   "categories": [
-    "Other"
+    "AI",
+    "Chat"
   ],
   "activationEvents": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chess0000/vscode-extension"
+  },
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
