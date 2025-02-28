@@ -21,7 +21,7 @@
     "commands": [
       {
         "command": "extension.createChat",
-        "title": "DocGen: Open Chat"
+        "title": "CodeGen: Open Chat"
       }
     ]
   },
