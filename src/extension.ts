@@ -33,11 +33,20 @@ export function activate(context: vscode.ExtensionContext) {
 						if (userInput.trim().startsWith('/')) {
 							const command = userInput.trim().substring(1).toLowerCase();
 							let response = '';
+							let shouldUpdate = true;
 
 							if (command === 'tab') {
 								response = await handleTabCommand();
+								// 【追加】クリップボードにコピー
+								await vscode.env.clipboard.writeText(response);
+								vscode.window.showInformationMessage('Tab contents copied to clipboard!');
 							} else if (command === 'file') {
 								response = await handleFileCommand();
+							} else if (command === 'clear') {
+								// 【追加】履歴クリア (手入力 /clear 対応)
+								chatHistory = [];
+								updateWebview();
+								return; // ここで終了して再描画
 							}
 
 							if (response) {
@@ -52,11 +61,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 						if (message.command === 'tab') {
 							response = await handleTabCommand();
+							// 【追加】クリップボードにコピー
+							await vscode.env.clipboard.writeText(response);
+							vscode.window.showInformationMessage('Tab contents copied to clipboard!');
 						} else if (message.command === 'file') {
 							response = await handleFileCommand();
+						} else if (message.command === 'clear') {
+							// 【追加】履歴クリア (ボタン対応)
+							chatHistory = [];
+							updateWebview();
+							return;
 						}
 
-						chatHistory.push(`System: ${response}`);
+						if (response) {
+							chatHistory.push(`System: ${response}`);
+						}
 						updateWebview();
 					}
 				},
@@ -199,17 +218,23 @@ export function activate(context: vscode.ExtensionContext) {
                             <button class="command-button" id="btnTab">
                                 <span class="command-icon">📁</span> /tab
                             </button>
-                            <span class="tooltiptext">Reads and outputs all tabs of files currently open in VS Code. You can also type "/tab" in the input field.</span>
+                            <span class="tooltiptext">Reads all tabs & copies to clipboard.</span>
                         </div>
                         <div class="tooltip">
                             <button class="command-button" id="btnFile">
                                 <span class="command-icon">📄</span> /file
                             </button>
-                            <span class="tooltiptext">Searches for files under the project root in VS Code, allows file selection, and outputs the selected file. You can also type "/file" in the input field.</span>
+                            <span class="tooltiptext">Select a file to display its content.</span>
+                        </div>
+                         <div class="tooltip">
+                            <button class="command-button" id="btnClear">
+                                <span class="command-icon">🗑️</span> /clear
+                            </button>
+                            <span class="tooltiptext">Clears the chat history.</span>
                         </div>
                     </div>
                     <div class="input-container">
-                        <textarea id="userInput" placeholder="Type a message or command (/tab, /file)..." rows="4"></textarea>
+                        <textarea id="userInput" placeholder="Type a message or command (/tab, /file, /clear)..." rows="4"></textarea>
                     </div>
                 </div>
                 <script>
@@ -218,11 +243,12 @@ export function activate(context: vscode.ExtensionContext) {
                     const userInput = document.getElementById('userInput');
                     const btnTab = document.getElementById('btnTab');
                     const btnFile = document.getElementById('btnFile');
+                    const btnClear = document.getElementById('btnClear'); // 【追加】
 
                     function scrollToBottom() {
                         chatHistory.scrollTop = chatHistory.scrollHeight;
                     }
-                    
+
                     scrollToBottom();
 
                     userInput.addEventListener('keydown', (event) => {
@@ -238,18 +264,26 @@ export function activate(context: vscode.ExtensionContext) {
                             }
                         }
                     });
-                    
+
                     btnTab.addEventListener('click', () => {
                         vscode.postMessage({
                             type: 'runCommand',
                             command: 'tab'
                         });
                     });
-                    
+
                     btnFile.addEventListener('click', () => {
                         vscode.postMessage({
                             type: 'runCommand',
                             command: 'file'
+                        });
+                    });
+
+                    // 【追加】Clearボタンのイベントリスナー
+                    btnClear.addEventListener('click', () => {
+                        vscode.postMessage({
+                            type: 'runCommand',
+                            command: 'clear'
                         });
                     });
                 </script>
@@ -407,10 +441,10 @@ export function activate(context: vscode.ExtensionContext) {
 		// Convert gitignore pattern to regex
 		// This is a simplified version and doesn't handle all gitignore syntax
 		const regexPattern = pattern
-			.replace(/\./g, '\\.')     // Escape dots
-			.replace(/\*/g, '.*')      // Convert * to regex equivalent
-			.replace(/\?/g, '.')       // Convert ? to regex equivalent
-			.replace(/\//g, '\\/');    // Escape slashes
+			.replace(/\./g, '\\.')
+			.replace(/\*/g, '.*')
+			.replace(/\?/g, '.')
+			.replace(/\//g, '\\/');
 
 		const regex = new RegExp(`^${regexPattern}$|^${regexPattern}\\/|\\/${regexPattern}$|\\/${regexPattern}\\/`);
 		return regex.test(filePath);

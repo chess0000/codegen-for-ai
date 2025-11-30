@@ -2,7 +2,7 @@
   "name": "codegen-for-ai",
   "displayName": "CodeGen For AI",
   "description": "Code Generator for AI.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.97.0"
   },
@@ -32,7 +32,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "create-package": "vsce package"
   },
   "devDependencies": {
     "@types/vscode": "^1.97.0",
